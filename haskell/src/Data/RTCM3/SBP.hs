@@ -321,34 +321,35 @@ toCn0_L2 = (^. gpsL2ExtObservation_cnr)
 -- | Convert between DF013 and DF019 lock time to DF402 lock time
 --
 toLock :: Word8 -> Word8
-toLock t =
-  if t' < 32 then 0 else
-    if t' < 64 then 1 else
-      if t' < 128 then 2 else
-        if t' < 256 then 3 else
-          if t' < 512 then 4 else
-            if t' < 1024 then 5 else
-              if t' < 2048 then 6 else
-                if t' < 4096 then 7 else
-                  if t' < 8192 then 8 else
-                    if t' < 16384 then 9 else
-                      if t' < 32768 then 10 else
-                        if t' < 65536 then 11 else
-                          if t' < 131072 then 12 else
-                            if t' < 262144 then 13 else
-                              if t' < 524288 then 14 else
-                                15
+toLock t
+  | t' < 32     = 0
+  | t' < 64     = 1
+  | t' < 128    = 2
+  | t' < 256    = 3
+  | t' < 512    = 4
+  | t' < 1024   = 5
+  | t' < 2048   = 6
+  | t' < 4096   = 7
+  | t' < 8192   = 8
+  | t' < 16384  = 9
+  | t' < 32768  = 10
+  | t' < 65536  = 11
+  | t' < 131072 = 12
+  | t' < 262144 = 13
+  | t' < 524288 = 14
+  | otherwise   = 15
   where
-    t' :: Word32
-    t' =
-      1000 *
-        if t <= 23 then fromIntegral t else
-          if t <= 47 then fromIntegral t * 2 - 24 else
-            if t <= 71 then fromIntegral t * 4 - 120 else
-              if t <= 95 then fromIntegral t * 8 - 408 else
-                if t <= 119 then fromIntegral t * 16 - 1176 else
-                  if t <= 126 then fromIntegral t * 32 - 3096 else
-                    937
+    ti = fromIntegral t
+    t', t'' :: Word32
+    t' = 1000 * t''
+    t''
+      | t <= 23   = ti
+      | t <= 47   = ti * 2 - 24
+      | t <= 71   = ti * 4 - 120
+      | t <= 95   = ti * 8 - 408
+      | t <= 119  = ti * 16 - 1176
+      | t <= 126  = ti * 32 - 3096
+      | otherwise = 937
 
 -- | Construct sequenced SBP observation header
 --
@@ -484,30 +485,30 @@ toSender = (.|. 0xf000)
 -- | Decode SBP 'fitInterval' from RTCM/GPS 'fitIntervalFlag' and IODC.
 -- Implementation adapted from libswiftnav/ephemeris.c.
 decodeFitInterval :: Bool -> Word16 -> Word32
-decodeFitInterval fitInt iodc =
-  if not fitInt then 4 * 60 * 60 else
-    if iodc >= 240 && iodc <= 247 then 8 * 60 * 60 else
-      if (iodc >= 248 && iodc <= 255) || iodc == 496 then 14 * 60 * 60 else
-        if (iodc >= 497 && iodc <= 503) || (iodc >= 1021 && iodc <= 1023) then 26 * 60 * 60 else
-          if iodc >= 504 && iodc <= 510 then 50 * 60 * 60 else
-            if iodc == 511 || (iodc >= 752 && iodc <= 756) then 74 * 60 * 60 else
-              if iodc == 757 then 98 * 60 * 60 else
-                6 * 60 * 60
+decodeFitInterval fitInt iodc
+  | not fitInt                                                     = 4 * 60 * 60
+  | iodc >= 240 && iodc <= 247                                     = 8 * 60 * 60
+  | (iodc >= 248 && iodc <= 255) || iodc == 496                    = 14 * 60 * 60
+  | (iodc >= 497 && iodc <= 503) || (iodc >= 1021 && iodc <= 1023) = 26 * 60 * 60
+  | iodc >= 504 && iodc <= 510                                     = 50 * 60 * 60
+  | iodc == 511 || (iodc >= 752 && iodc <= 756)                    = 74 * 60 * 60
+  | iodc == 757                                                    = 98 * 60 * 60
+  | otherwise                                                      = 6 * 60 * 60
 
 -- | Convert between RTCM/GPS URA ("User Range Accuracy") index to a number in meters.
 -- See section 2.5.3, "User Range Accuracy", in the GPS signal specification.
 -- Indices 1, 3, and 5 are hard-coded according to spec, and 15 is hard-coded according
 -- to SBP/Piksi convention.
 gpsUriToUra :: Double -> Double
-gpsUriToUra uri =
-  if uri < 0 then -1 else
-    if uri == 1 then 2.8 else
-      if uri == 3 then 5.7 else
-        if uri == 5 then 11.3 else
-          if uri == 15 then 6144 else
-            if uri <= 6 then 2 ** (1 + (uri / 2)) else
-              if uri > 6 && uri < 15 then 2 ** (uri - 2) else
-                -1
+gpsUriToUra uri
+  | uri < 0             = -1
+  | uri == 1            = 2.8
+  | uri == 3            = 5.7
+  | uri == 5            = 11.3
+  | uri == 15           = 6144
+  | uri <= 6            = 2 ** (1 + (uri / 2))
+  | uri > 6 && uri < 15 = 2 ** (uri - 2)
+  | otherwise           = -1
 
 --------------------------------------------------------------------------------
 -- RTCM to SBP conversion utilities: RTCM Msgs. 1002 (L1 RTK), 1004 (L1+L2 RTK),
