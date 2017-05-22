@@ -29,6 +29,7 @@ import Control.Monad.Trans.Control
 import Control.Monad.Trans.Resource
 import Data.IORef
 import Data.Word
+import Data.Time ( UTCTime )
 import SwiftNav.SBP
 
 type GpsTimeMap = HashMap Word16 GpsTimeNano
@@ -68,6 +69,7 @@ instance MonadBase b m => MonadBase b (ConvertT r m) where
 data Store = Store
   { _storeWn         :: IORef Word16
   , _storeGpsTimeMap :: IORef GpsTimeMap
+  , _storeUTCTime    :: IORef UTCTime
   } deriving ( Eq )
 
 $(makeClassy ''Store)
