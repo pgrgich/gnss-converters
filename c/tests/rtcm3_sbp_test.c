@@ -17,6 +17,13 @@
 #include <assert.h>
 
 #define MAX_FILE_SIZE 26000
+FILE* fp_out = NULL;
+sbp_state_t sbp_state;
+
+uint32_t write_sbp(u8 *buff, u32 n, void *context){
+  (void)context;
+  return fwrite(buff,sizeof(u8),n,fp_out);
+}
 
 void sbp_callback_gps (u8 msg_id, u8 length, u8 *buffer, u16 sender_id)
 {
@@ -29,6 +36,7 @@ void sbp_callback_gps (u8 msg_id, u8 length, u8 *buffer, u16 sender_id)
   } else {
     assert(msg_id == SBP_MSG_OBS);
   }
+
   msg_count++;
 
 //  if(msg_id == SBP_MSG_OBS) {
@@ -49,6 +57,7 @@ void sbp_callback_glo_day_rollover (u8 msg_id, u8 length, u8 *buffer, u16 sender
     assert(num_sbp_msgs > 2 );
   }
   msg_count++;
+  sbp_send_message(&sbp_state,msg_id,sender_id,length,buffer,write_sbp);
 
 //  if(msg_id == SBP_MSG_OBS) {
 //    msg_obs_t* sbp_msg = (msg_obs_t*)buffer;
@@ -103,12 +112,22 @@ void test_day_rollover(void)
   rtcm2sbp_set_gps_time(&current_time,&state);
   rtcm2sbp_set_leap_second(18,&state);
 
+
+
   FILE* fp = fopen("../../tests/data/glo_day_rollover.rtcm","rb");
+  fp_out = fopen("../../tests/data/glo_day_rollover.rtcm.sbp","wb+");
+
+  sbp_state_init(&sbp_state);
 
   u8 buffer[MAX_FILE_SIZE];
 
   if(fp == NULL) {
     fprintf(stderr, "Can't open input file!\n");
+    exit(1);
+  }
+
+  if(fp_out == NULL) {
+    fprintf(stderr, "Can't open output file!\n");
     exit(1);
   }
 
