@@ -13,6 +13,7 @@
 #include "rtcm3_sbp_test.h"
 #include <rtcm3_sbp.h>
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <assert.h>
 
@@ -131,14 +132,19 @@ void test_day_rollover(void)
     exit(1);
   }
 
-  uint32_t file_size = fread(buffer, 1, MAX_FILE_SIZE, fp);
+  fread(buffer, 1, MAX_FILE_SIZE, fp);
   uint32_t buffer_index = 0;
-  while (buffer_index < file_size) {
+  while (!feof(fp)) {
 
     if (buffer[buffer_index] == 0xD3) {
       rtcm2sbp_decode_frame(&buffer[buffer_index], MAX_FILE_SIZE - buffer_index, &state);
     }
     buffer_index++;
+    if(!feof(fp)) {
+      memmove(buffer,buffer+buffer_index,MAX_FILE_SIZE-buffer_index);
+      fread(buffer+(MAX_FILE_SIZE-buffer_index), 1, buffer_index, fp);
+      buffer_index = 0;
+    }
   }
 
   return;
