@@ -200,9 +200,9 @@ void send_observations(struct rtcm3_sbp_state *state)
   const msg_obs_t *sbp_obs_buffer = (msg_obs_t *)state->obs_buffer;
 
   /* Work out how many sbp messages we need to split this into */
-  const ssize_t header_size = sizeof(observation_header_t);
-  const ssize_t obs_size = sizeof(packed_obs_content_t);
-  const ssize_t max_obs_in_sbp = ((MAX_SBP_PAYLOAD - header_size) / obs_size);
+  const uint32_t header_size = sizeof(observation_header_t);
+  const uint32_t obs_size = sizeof(packed_obs_content_t);
+  const uint32_t max_obs_in_sbp = ((MAX_SBP_PAYLOAD - header_size) / obs_size);
 
   /* We want the ceiling of n_obs divided by max obs in a single message to get
    * total number of messages needed */
