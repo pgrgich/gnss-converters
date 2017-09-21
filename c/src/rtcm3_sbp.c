@@ -15,6 +15,10 @@
 #include <math.h>
 #include <string.h>
 #include <assert.h>
+#include <rtcm3_messages.h>
+
+uint32_t last_gps_obs_time;
+uint32_t last_glo_obs_time;
 
 void rtcm2sbp_init(struct rtcm3_sbp_state *state,
                    void (*cb)(u8 msg_id, u8 length, u8 *buffer, u16 sender_id))
@@ -28,6 +32,9 @@ void rtcm2sbp_init(struct rtcm3_sbp_state *state,
 
   state->sender_id = 0;
   state->cb = cb;
+
+  state->last_gps_time = INVALID_TOW;
+  state->last_glo_time = INVALID_TOW;
 
   const msg_obs_t *sbp_obs_buffer = (msg_obs_t *)state->obs_buffer;
   memset((void*)sbp_obs_buffer,0, sizeof(*sbp_obs_buffer));
@@ -137,18 +144,26 @@ void rtcm2sbp_decode_frame(const uint8_t *frame, uint32_t frame_length, struct r
 
 void add_glo_obs_to_buffer(const rtcm_obs_message *new_rtcm_obs, struct rtcm3_sbp_state *state)
 {
-  gps_time_sec_t obs_time;
-  compute_glo_time(new_rtcm_obs->header.tow_ms, &obs_time, &state->time_from_rover_obs, state->leap_seconds);
+  if(new_rtcm_obs->header.tow_ms > state->last_glo_time) {
+    state->last_glo_time = new_rtcm_obs->header.tow_ms;
 
-  add_obs_to_buffer(new_rtcm_obs, &obs_time, state);
+    gps_time_sec_t obs_time;
+    compute_glo_time(new_rtcm_obs->header.tow_ms, &obs_time, &state->time_from_rover_obs, state->leap_seconds);
+
+    add_obs_to_buffer(new_rtcm_obs, &obs_time, state);
+  }
 }
 
 void add_gps_obs_to_buffer(const rtcm_obs_message *new_rtcm_obs, struct rtcm3_sbp_state *state)
 {
-  gps_time_sec_t obs_time;
-  compute_gps_time(new_rtcm_obs->header.tow_ms, &obs_time, &state->time_from_rover_obs);
+  if(new_rtcm_obs->header.tow_ms > state->last_gps_time) {
+    state->last_gps_time = new_rtcm_obs->header.tow_ms;
 
-  add_obs_to_buffer(new_rtcm_obs, &obs_time, state);
+    gps_time_sec_t obs_time;
+    compute_gps_time(new_rtcm_obs->header.tow_ms, &obs_time, &state->time_from_rover_obs);
+
+    add_obs_to_buffer(new_rtcm_obs, &obs_time, state);
+  }
 }
 
 void add_obs_to_buffer(const rtcm_obs_message *new_rtcm_obs, gps_time_sec_t *obs_time, struct rtcm3_sbp_state *state)
