@@ -16,8 +16,11 @@
 #include <string.h>
 #include <assert.h>
 
+static void validate_base_obs_sanity(struct rtcm3_sbp_state *state, gps_time_sec_t *obs_time, const gps_time_sec_t *rover_time);
+
 void rtcm2sbp_init(struct rtcm3_sbp_state *state,
-                   void (*cb)(u8 msg_id, u8 length, u8 *buffer, u16 sender_id))
+                   void (*cb)(u8 msg_id, u8 length, u8 *buffer, u16 sender_id),
+                   void (*cb_base_obs_invalid)(double timediff))
 {
   state->time_from_rover_obs.wn = 0;
   state->time_from_rover_obs.tow = 0;
@@ -28,6 +31,7 @@ void rtcm2sbp_init(struct rtcm3_sbp_state *state,
 
   state->sender_id = 0;
   state->cb = cb;
+  state->cb_base_obs_invalid = cb_base_obs_invalid;
 
   state->last_gps_time.wn = INVALID_TIME;
   state->last_gps_time.tow = 0;
@@ -156,7 +160,7 @@ void add_glo_obs_to_buffer(const rtcm_obs_message *new_rtcm_obs, struct rtcm3_sb
 void add_gps_obs_to_buffer(const rtcm_obs_message *new_rtcm_obs, struct rtcm3_sbp_state *state)
 {
   gps_time_sec_t obs_time;
-  compute_gps_time(new_rtcm_obs->header.tow_ms, &obs_time, &state->time_from_rover_obs);
+  compute_gps_time(new_rtcm_obs->header.tow_ms, &obs_time, &state->time_from_rover_obs, state);
 
   if(state->last_glo_time.wn == INVALID_TIME
      || gps_diff_time(&obs_time, &state->last_gps_time) > 0.0) {
@@ -455,7 +459,7 @@ void rtcm2sbp_set_leap_second(s8 leap_seconds, struct rtcm3_sbp_state *state) {
   state->leap_second_known = true;
 }
 
-void compute_gps_time(double tow_ms, gps_time_sec_t *obs_time, const gps_time_sec_t *rover_time)
+void compute_gps_time(double tow_ms, gps_time_sec_t *obs_time, const gps_time_sec_t *rover_time, struct rtcm3_sbp_state *state)
 {
   obs_time->tow = tow_ms * MS_TO_S;
   obs_time->wn = rover_time->wn;
@@ -465,6 +469,7 @@ void compute_gps_time(double tow_ms, gps_time_sec_t *obs_time, const gps_time_se
   } else if (timediff > SEC_IN_WEEK / 2) {
     obs_time->wn = rover_time->wn - 1;
   }
+  validate_base_obs_sanity(state, obs_time, rover_time);
 }
 
 void compute_glo_time(double tod_ms, gps_time_sec_t *obs_time, const gps_time_sec_t *rover_time, const s8 leap_second)
@@ -488,4 +493,15 @@ void compute_glo_time(double tod_ms, gps_time_sec_t *obs_time, const gps_time_se
   }
 
   obs_time->tow = rover_dow * SEC_IN_DAY + glo_tod_sec;
+}
+
+static const double INSANITY_THRESHOLD = 10.0;
+
+static void validate_base_obs_sanity(struct rtcm3_sbp_state *state, gps_time_sec_t *obs_time, const gps_time_sec_t *rover_time) {
+
+  double timediff = gps_diff_time(rover_time, obs_time);
+
+  if (timediff >= INSANITY_THRESHOLD && state->cb_base_obs_invalid != NULL) {
+    state->cb_base_obs_invalid(timediff);
+  }
 }
