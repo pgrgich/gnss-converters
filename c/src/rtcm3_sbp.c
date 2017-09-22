@@ -15,11 +15,6 @@
 #include <math.h>
 #include <string.h>
 #include <assert.h>
-#include <rtcm3_messages.h>
-#include <libsbp/gnss.h>
-
-uint32_t last_gps_obs_time;
-uint32_t last_glo_obs_time;
 
 void rtcm2sbp_init(struct rtcm3_sbp_state *state,
                    void (*cb)(u8 msg_id, u8 length, u8 *buffer, u16 sender_id))
