@@ -18,7 +18,7 @@
 
 #define MAX_OBS_PER_EPOCH 56
 /* MAX valid value (ms) for GPS is 604799999 and GLO is 86401999 */
-#define INVALID_TOW 0xFFFF
+#define INVALID_TIME 0xFFFF
 
 struct rtcm3_sbp_state {
   gps_time_sec_t time_from_rover_obs;
@@ -26,8 +26,8 @@ struct rtcm3_sbp_state {
   s8 leap_seconds;
   bool leap_second_known;
   u16 sender_id;
-  u32 last_gps_time;
-  u32 last_glo_time;
+  gps_time_sec_t last_gps_time;
+  gps_time_sec_t last_glo_time;
   void (*cb)(u8 msg_id, u8 buff, u8 *len, u16 sender_id);
   u8 obs_buffer[sizeof(observation_header_t) + MAX_OBS_PER_EPOCH * sizeof(packed_obs_content_t)];
 };
