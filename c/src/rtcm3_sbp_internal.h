@@ -16,8 +16,6 @@
 #include <rtcm3_messages.h>
 #include <rtcm3_sbp.h>
 
-#include <libsbp/piksi.h>
-
 #define MSG_OBS_P_MULTIPLIER ((double)5e1)
 #define MSG_OBS_CN0_MULTIPLIER ((float)4)
 #define MSG_OBS_LF_MULTIPLIER ((double)(1 << 8))

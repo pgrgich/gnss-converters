@@ -19,7 +19,7 @@
 static void validate_base_obs_sanity(struct rtcm3_sbp_state *state, gps_time_sec_t *obs_time, const gps_time_sec_t *rover_time);
 
 void rtcm2sbp_init(struct rtcm3_sbp_state *state,
-                   void (*cb)(u8 msg_id, u8 length, u8 *buffer, u16 sender_id),
+                   void (*cb_rtcm_to_sbp)(u8 msg_id, u8 length, u8 *buffer, u16 sender_id),
                    void (*cb_base_obs_invalid)(double timediff))
 {
   state->time_from_rover_obs.wn = 0;
@@ -30,7 +30,7 @@ void rtcm2sbp_init(struct rtcm3_sbp_state *state,
   state->leap_second_known = false;
 
   state->sender_id = 0;
-  state->cb = cb;
+  state->cb_rtcm_to_sbp = cb_rtcm_to_sbp;
   state->cb_base_obs_invalid = cb_base_obs_invalid;
 
   state->last_gps_time.wn = INVALID_TIME;
@@ -97,8 +97,8 @@ void rtcm2sbp_decode_frame(const uint8_t *frame, uint32_t frame_length, struct r
     if (0 == rtcm3_decode_1005(&frame[byte], &msg_1005)) {
       msg_base_pos_ecef_t sbp_base_pos;
       rtcm3_1005_to_sbp(&msg_1005, &sbp_base_pos);
-      state->cb(SBP_MSG_BASE_POS_ECEF, (u8)sizeof(sbp_base_pos),
-                (u8 *)&sbp_base_pos, rtcm_2_sbp_sender_id(msg_1005.stn_id));
+      state->cb_rtcm_to_sbp(SBP_MSG_BASE_POS_ECEF, (u8)sizeof(sbp_base_pos),
+                            (u8 *)&sbp_base_pos, rtcm_2_sbp_sender_id(msg_1005.stn_id));
     }
     break;
   }
@@ -107,8 +107,8 @@ void rtcm2sbp_decode_frame(const uint8_t *frame, uint32_t frame_length, struct r
     if (0 == rtcm3_decode_1006(&frame[byte], &msg_1006)) {
       msg_base_pos_ecef_t sbp_base_pos;
       rtcm3_1006_to_sbp(&msg_1006, &sbp_base_pos);
-      state->cb(SBP_MSG_BASE_POS_ECEF, (u8)sizeof(sbp_base_pos),
-                (u8 *)&sbp_base_pos, rtcm_2_sbp_sender_id(msg_1006.msg_1005.stn_id));
+      state->cb_rtcm_to_sbp(SBP_MSG_BASE_POS_ECEF, (u8)sizeof(sbp_base_pos),
+                            (u8 *)&sbp_base_pos, rtcm_2_sbp_sender_id(msg_1006.msg_1005.stn_id));
     }
     break;
   }
@@ -135,8 +135,8 @@ void rtcm2sbp_decode_frame(const uint8_t *frame, uint32_t frame_length, struct r
       /* 1230 Message needs SBP message support to send
       msg_glo_code_phase_bias_t sbp_glo_cpb;
       rtcm3_1230_to_sbp(&msg_1230, &sbp_glo_cpb);
-      state->cb(SBP_MSG_GLO_CODE_PHASE_BIAS, (u8)sizeof(sbp_glo_cpb),
-       (u8 *)&sbp_glo_cpb, rtcm_2_sbp_sender_id(msg1230.stn_id)); */
+      state->cb_rtcm_to_sbp(SBP_MSG_GLO_CODE_PHASE_BIAS, (u8)sizeof(sbp_glo_cpb),
+                            (u8 *)&sbp_glo_cpb, rtcm_2_sbp_sender_id(msg1230.stn_id)); */
     }
   }
   default:
@@ -242,7 +242,7 @@ void send_observations(struct rtcm3_sbp_state *state)
     sbp_obs->header.t = sbp_obs_buffer->header.t;
     sbp_obs->header.n_obs = (total_messages << 4) + msg_num;
 
-    state->cb(SBP_MSG_OBS, header_size + obs_index * obs_size, (u8 *) sbp_obs, state->sender_id);
+    state->cb_rtcm_to_sbp(SBP_MSG_OBS, header_size + obs_index * obs_size, (u8 *) sbp_obs, state->sender_id);
   }
   memset((void*)sbp_obs_buffer,0, sizeof(*sbp_obs_buffer));
 }
