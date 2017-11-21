@@ -450,18 +450,18 @@ void rtcm3_1230_to_sbp(const rtcm_msg_1230 *rtcm_1230,
                       msg_glo_biases_t *sbp_glo_bias)
 {
   sbp_glo_bias->mask = rtcm_1230->fdma_signal_mask;
-  sbp_glo_bias->l1ca_bias = rtcm_1230->L1_CA_cpb;
-  sbp_glo_bias->l1p_bias = rtcm_1230->L1_P_cpb;
-  sbp_glo_bias->l2ca_bias = rtcm_1230->L2_CA_cpb;
-  sbp_glo_bias->l2p_bias = rtcm_1230->L2_P_cpb;
+  sbp_glo_bias->l1ca_bias = rtcm_1230->L1_CA_cpb / 0.02;
+  sbp_glo_bias->l1p_bias = rtcm_1230->L1_P_cpb / 0.02;
+  sbp_glo_bias->l2ca_bias = rtcm_1230->L2_CA_cpb / 0.02;
+  sbp_glo_bias->l2p_bias = rtcm_1230->L2_P_cpb / 0.02;
 }
 
 void sbp_to_rtcm3_1230(const msg_glo_biases_t *sbp_glo_bias,
                        rtcm_msg_1230 *rtcm_1230)
 {
   rtcm_1230->fdma_signal_mask = sbp_glo_bias->mask;
-  rtcm_1230->L1_CA_cpb = sbp_glo_bias->l1ca_bias;
-  rtcm_1230->L1_P_cpb = sbp_glo_bias->l1p_bias;
+  rtcm_1230->L1_CA_cpb = sbp_glo_bias->l1ca_bias * 0.02;
+  rtcm_1230->L1_P_cpb = sbp_glo_bias->l1p_bias * 0.02;
   rtcm_1230->L2_CA_cpb = sbp_glo_bias->l2ca_bias;
   rtcm_1230->L2_P_cpb = sbp_glo_bias->l2p_bias;
 }
