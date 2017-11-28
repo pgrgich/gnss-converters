@@ -15,6 +15,7 @@
 #include <math.h>
 #include <string.h>
 #include <assert.h>
+#include <rtcm3_messages.h>
 
 static void validate_base_obs_sanity(struct rtcm3_sbp_state *state, gps_time_sec_t *obs_time, const gps_time_sec_t *rover_time);
 
@@ -451,16 +452,18 @@ void rtcm3_1230_to_sbp(const rtcm_msg_1230 *rtcm_1230,
 {
   sbp_glo_bias->mask = rtcm_1230->fdma_signal_mask;
   /* Resolution 2cm */
-  sbp_glo_bias->l1ca_bias = rtcm_1230->L1_CA_cpb_meter * 50;
-  sbp_glo_bias->l1p_bias = rtcm_1230->L1_P_cpb_meter * 50;
-  sbp_glo_bias->l2ca_bias = rtcm_1230->L2_CA_cpb_meter * 50;
-  sbp_glo_bias->l2p_bias = rtcm_1230->L2_P_cpb_meter * 50;
+  s8 sign_indicator = rtcm_1230->bias_indicator == 0 ? 1 : -1;
+  sbp_glo_bias->l1ca_bias = sign_indicator * rtcm_1230->L1_CA_cpb_meter * 50;
+  sbp_glo_bias->l1p_bias = sign_indicator * rtcm_1230->L1_P_cpb_meter * 50;
+  sbp_glo_bias->l2ca_bias = sign_indicator * rtcm_1230->L2_CA_cpb_meter * 50;
+  sbp_glo_bias->l2p_bias = sign_indicator * rtcm_1230->L2_P_cpb_meter * 50;
 }
 
 void sbp_to_rtcm3_1230(const msg_glo_biases_t *sbp_glo_bias,
                        rtcm_msg_1230 *rtcm_1230)
 {
   rtcm_1230->fdma_signal_mask = sbp_glo_bias->mask;
+  rtcm_1230->bias_indicator = 0;
   rtcm_1230->L1_CA_cpb_meter = sbp_glo_bias->l1ca_bias * 0.02;
   rtcm_1230->L1_P_cpb_meter = sbp_glo_bias->l1p_bias * 0.02;
   rtcm_1230->L2_CA_cpb_meter = sbp_glo_bias->l2ca_bias * 0.02;
