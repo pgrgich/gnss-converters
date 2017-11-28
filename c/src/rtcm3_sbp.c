@@ -15,7 +15,6 @@
 #include <math.h>
 #include <string.h>
 #include <assert.h>
-#include <rtcm3_messages.h>
 
 static void validate_base_obs_sanity(struct rtcm3_sbp_state *state, gps_time_sec_t *obs_time, const gps_time_sec_t *rover_time);
 
