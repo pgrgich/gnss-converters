@@ -20,6 +20,12 @@
 /* MAX valid value (ms) for GPS is 604799999 and GLO is 86401999 */
 #define INVALID_TIME 0xFFFF
 
+/* Multiplier for glonass bias resolution scaling */
+#define GLO_BIAS_RESOLUTION 50
+
+/* How long to wait after receiving a 1230 message before accepting the 1033 message again */
+#define MSG_1230_TIMEOUT 45
+
 struct rtcm3_sbp_state {
   gps_time_sec_t time_from_rover_obs;
   bool gps_time_updated;
@@ -28,6 +34,7 @@ struct rtcm3_sbp_state {
   u16 sender_id;
   gps_time_sec_t last_gps_time;
   gps_time_sec_t last_glo_time;
+  gps_time_sec_t last_1230_received;
   void (*cb_rtcm_to_sbp)(u8 msg_id, u8 buff, u8 *len, u16 sender_id);
   void (*cb_base_obs_invalid)(double time_diff);
   u8 obs_buffer[sizeof(observation_header_t) + MAX_OBS_PER_EPOCH * sizeof(packed_obs_content_t)];

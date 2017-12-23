@@ -37,6 +37,8 @@ void rtcm2sbp_init(struct rtcm3_sbp_state *state,
   state->last_gps_time.tow = 0;
   state->last_glo_time.wn = INVALID_TIME;
   state->last_glo_time.tow = 0;
+  state->last_1230_received.wn = INVALID_TIME;
+  state->last_1230_received.tow = 0;
 
   const msg_obs_t *sbp_obs_buffer = (msg_obs_t *)state->obs_buffer;
   memset((void*)sbp_obs_buffer,0, sizeof(*sbp_obs_buffer));
@@ -129,6 +131,16 @@ void rtcm2sbp_decode_frame(const uint8_t *frame, uint32_t frame_length, struct r
     }
     break;
   }
+  case 1033: {
+    rtcm_msg_1033 msg_1033;
+    if (rtcm3_decode_1033(&frame[byte], &msg_1033) == 0 && no_1230_received(state)) {
+      msg_glo_biases_t sbp_glo_cpb;
+      rtcm3_1033_to_sbp(&msg_1033, &sbp_glo_cpb);
+      state->cb_rtcm_to_sbp(SBP_MSG_GLO_BIASES, (u8)sizeof(sbp_glo_cpb),
+                            (u8 *)&sbp_glo_cpb, rtcm_2_sbp_sender_id(msg_1033.stn_id));
+    }
+    break;
+  }
   case 1230: {
     rtcm_msg_1230 msg_1230;
     if (rtcm3_decode_1230(&frame[byte], &msg_1230) == 0) {
@@ -136,6 +148,7 @@ void rtcm2sbp_decode_frame(const uint8_t *frame, uint32_t frame_length, struct r
       rtcm3_1230_to_sbp(&msg_1230, &sbp_glo_cpb);
       state->cb_rtcm_to_sbp(SBP_MSG_GLO_BIASES, (u8)sizeof(sbp_glo_cpb),
                             (u8 *)&sbp_glo_cpb, rtcm_2_sbp_sender_id(msg_1230.stn_id));
+      state->last_1230_received = state->time_from_rover_obs;
     }
   }
   default:
@@ -446,16 +459,44 @@ void sbp_to_rtcm3_1006(const msg_base_pos_ecef_t *sbp_base_pos,
   rtcm_1006->ant_height = 0.0;
 }
 
+void rtcm3_1033_to_sbp(const rtcm_msg_1033 *rtcm_1033,
+                       msg_glo_biases_t *sbp_glo_bias)
+{
+  sbp_glo_bias->mask = 0;
+  /* Resolution 2cm */
+  if(strcasestr(rtcm_1033->rcv_descriptor,"TRIMBLE") != NULL) {
+    sbp_glo_bias->mask = 9;
+    sbp_glo_bias->l1ca_bias = 18.8 * GLO_BIAS_RESOLUTION;
+    sbp_glo_bias->l2p_bias = 23.2 * GLO_BIAS_RESOLUTION;
+  } else if( strcasestr(rtcm_1033->rcv_descriptor,"LEICA") != NULL || strcasestr(rtcm_1033->rcv_descriptor,"NOV") != NULL) {
+    sbp_glo_bias->mask = 9;
+    sbp_glo_bias->l1ca_bias = -70.7 * GLO_BIAS_RESOLUTION;
+    sbp_glo_bias->l2p_bias = -66.3 * GLO_BIAS_RESOLUTION;
+  } else if( strcasestr(rtcm_1033->rcv_descriptor,"SEP") != NULL) {
+    sbp_glo_bias->mask = 9;
+    sbp_glo_bias->l1ca_bias = 0.0 * GLO_BIAS_RESOLUTION;
+    sbp_glo_bias->l2p_bias = 0.0 * GLO_BIAS_RESOLUTION;
+  } else if( strcasestr(rtcm_1033->rcv_descriptor,"TOP") != NULL) {
+    sbp_glo_bias->mask = 9;
+    sbp_glo_bias->l1ca_bias = -2.56 * GLO_BIAS_RESOLUTION;
+    sbp_glo_bias->l2p_bias = 3.74 * GLO_BIAS_RESOLUTION;
+  } else if( strcasestr(rtcm_1033->rcv_descriptor,"HEM") != NULL) {
+    sbp_glo_bias->mask = 9;
+    sbp_glo_bias->l1ca_bias = -0.3 * GLO_BIAS_RESOLUTION;
+    sbp_glo_bias->l2p_bias = 3.5 * GLO_BIAS_RESOLUTION;
+  }
+}
+
 void rtcm3_1230_to_sbp(const rtcm_msg_1230 *rtcm_1230,
                       msg_glo_biases_t *sbp_glo_bias)
 {
   sbp_glo_bias->mask = rtcm_1230->fdma_signal_mask;
   /* Resolution 2cm */
   s8 sign_indicator = rtcm_1230->bias_indicator == 0 ? 1 : -1;
-  sbp_glo_bias->l1ca_bias = sign_indicator * rtcm_1230->L1_CA_cpb_meter * 50;
-  sbp_glo_bias->l1p_bias = sign_indicator * rtcm_1230->L1_P_cpb_meter * 50;
-  sbp_glo_bias->l2ca_bias = sign_indicator * rtcm_1230->L2_CA_cpb_meter * 50;
-  sbp_glo_bias->l2p_bias = sign_indicator * rtcm_1230->L2_P_cpb_meter * 50;
+  sbp_glo_bias->l1ca_bias = sign_indicator * rtcm_1230->L1_CA_cpb_meter * GLO_BIAS_RESOLUTION;
+  sbp_glo_bias->l1p_bias = sign_indicator * rtcm_1230->L1_P_cpb_meter * GLO_BIAS_RESOLUTION;
+  sbp_glo_bias->l2ca_bias = sign_indicator * rtcm_1230->L2_CA_cpb_meter * GLO_BIAS_RESOLUTION;
+  sbp_glo_bias->l2p_bias = sign_indicator * rtcm_1230->L2_P_cpb_meter * GLO_BIAS_RESOLUTION;
 }
 
 void sbp_to_rtcm3_1230(const msg_glo_biases_t *sbp_glo_bias,
@@ -463,10 +504,10 @@ void sbp_to_rtcm3_1230(const msg_glo_biases_t *sbp_glo_bias,
 {
   rtcm_1230->fdma_signal_mask = sbp_glo_bias->mask;
   rtcm_1230->bias_indicator = 0;
-  rtcm_1230->L1_CA_cpb_meter = sbp_glo_bias->l1ca_bias * 0.02;
-  rtcm_1230->L1_P_cpb_meter = sbp_glo_bias->l1p_bias * 0.02;
-  rtcm_1230->L2_CA_cpb_meter = sbp_glo_bias->l2ca_bias * 0.02;
-  rtcm_1230->L2_P_cpb_meter = sbp_glo_bias->l2p_bias * 0.02;
+  rtcm_1230->L1_CA_cpb_meter = sbp_glo_bias->l1ca_bias / GLO_BIAS_RESOLUTION;
+  rtcm_1230->L1_P_cpb_meter = sbp_glo_bias->l1p_bias / GLO_BIAS_RESOLUTION;
+  rtcm_1230->L2_CA_cpb_meter = sbp_glo_bias->l2ca_bias / GLO_BIAS_RESOLUTION;
+  rtcm_1230->L2_P_cpb_meter = sbp_glo_bias->l2p_bias / GLO_BIAS_RESOLUTION;
 }
 
 void rtcm2sbp_set_gps_time(gps_time_sec_t *current_time, struct rtcm3_sbp_state* state)
@@ -526,4 +567,11 @@ static void validate_base_obs_sanity(struct rtcm3_sbp_state *state, gps_time_sec
   if (timediff >= INSANITY_THRESHOLD && state->cb_base_obs_invalid != NULL) {
     state->cb_base_obs_invalid(timediff);
   }
+}
+
+bool no_1230_received(struct rtcm3_sbp_state *state) {
+  if(gps_diff_time(&state->time_from_rover_obs,&state->last_1230_received) > MSG_1230_TIMEOUT) {
+    return true;
+  }
+  return false;
 }

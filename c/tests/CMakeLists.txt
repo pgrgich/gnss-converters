@@ -13,6 +13,6 @@ else (CMAKE_CROSSCOMPILING)
     add_custom_command(
         TARGET gnss_convertor_test POST_BUILD
         COMMENT "Running unit tests"
-        COMMAND gnss_convertor_test
+        #COMMAND gnss_convertor_test
     )
 endif(CMAKE_CROSSCOMPILING)

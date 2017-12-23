@@ -24,8 +24,10 @@ void sbp_callback_gps (u8 msg_id, u8 length, u8 *buffer, u16 sender_id)
   (void) buffer;
   (void) sender_id;
   static uint32_t msg_count = 0;
-  if(msg_count == 3 || msg_count == 19 || msg_count == 41) {
+  if(msg_count == 3 || msg_count == 20 || msg_count == 42) {
     assert(msg_id == SBP_MSG_BASE_POS_ECEF);
+  } else if(msg_count == 4) {
+    assert(msg_id == SBP_MSG_GLO_BIASES);
   } else {
     assert(msg_id == SBP_MSG_OBS);
   }
