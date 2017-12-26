@@ -464,23 +464,23 @@ void rtcm3_1033_to_sbp(const rtcm_msg_1033 *rtcm_1033,
 {
   sbp_glo_bias->mask = 0;
   /* Resolution 2cm */
-  if(strcasestr(rtcm_1033->rcv_descriptor,"TRIMBLE") != NULL) {
+  if(strstr(rtcm_1033->rcv_descriptor,"TRIMBLE") != NULL) {
     sbp_glo_bias->mask = 9;
     sbp_glo_bias->l1ca_bias = 18.8 * GLO_BIAS_RESOLUTION;
     sbp_glo_bias->l2p_bias = 23.2 * GLO_BIAS_RESOLUTION;
-  } else if( strcasestr(rtcm_1033->rcv_descriptor,"LEICA") != NULL || strcasestr(rtcm_1033->rcv_descriptor,"NOV") != NULL) {
+  } else if( strstr(rtcm_1033->rcv_descriptor,"LEICA") != NULL || strstr(rtcm_1033->rcv_descriptor,"NOV") != NULL) {
     sbp_glo_bias->mask = 9;
     sbp_glo_bias->l1ca_bias = -70.7 * GLO_BIAS_RESOLUTION;
     sbp_glo_bias->l2p_bias = -66.3 * GLO_BIAS_RESOLUTION;
-  } else if( strcasestr(rtcm_1033->rcv_descriptor,"SEP") != NULL) {
+  } else if( strstr(rtcm_1033->rcv_descriptor,"SEP") != NULL) {
     sbp_glo_bias->mask = 9;
     sbp_glo_bias->l1ca_bias = 0.0 * GLO_BIAS_RESOLUTION;
     sbp_glo_bias->l2p_bias = 0.0 * GLO_BIAS_RESOLUTION;
-  } else if( strcasestr(rtcm_1033->rcv_descriptor,"TOP") != NULL) {
+  } else if( strstr(rtcm_1033->rcv_descriptor,"TOP") != NULL) {
     sbp_glo_bias->mask = 9;
     sbp_glo_bias->l1ca_bias = -2.56 * GLO_BIAS_RESOLUTION;
     sbp_glo_bias->l2p_bias = 3.74 * GLO_BIAS_RESOLUTION;
-  } else if( strcasestr(rtcm_1033->rcv_descriptor,"HEM") != NULL) {
+  } else if( strstr(rtcm_1033->rcv_descriptor,"HEM") != NULL) {
     sbp_glo_bias->mask = 9;
     sbp_glo_bias->l1ca_bias = -0.3 * GLO_BIAS_RESOLUTION;
     sbp_glo_bias->l2p_bias = 3.5 * GLO_BIAS_RESOLUTION;
