@@ -21,10 +21,23 @@
 #define INVALID_TIME 0xFFFF
 
 /* Multiplier for glonass bias resolution scaling */
-#define GLO_BIAS_RESOLUTION 50
+#define GLO_BIAS_RESOLUTION 50.0
 
 /* How long to wait after receiving a 1230 message before accepting the 1033 message again */
-#define MSG_1230_TIMEOUT 45
+#define MSG_1230_TIMEOUT_SEC 45
+
+/* Third party receiver bias value - these have been sourced from RTCM1230 message, the
+ * data can be found with the unit tests*/
+#define TRIMBLE_BIAS_M 19.06
+#define LEICA_BIAS_M -71.94
+#define SEPTENTRIO_BIAS_M 0.0
+#define JAVAD_BIAS_M 19.06
+#define TOPCON_BIAS_L1CA_M -2.56
+#define TOPCON_BIAS_L2P_M 3.74
+#define HEMISPHERE_BIAS_L1CA_M -0.2
+#define HEMISPHERE_BIAS_L2P_M 3.4
+#define JAVAD_BIAS_L1CA_M -1.5
+#define JAVAD_BIAS_L2P_M -8.1
 
 struct rtcm3_sbp_state {
   gps_time_sec_t time_from_rover_obs;

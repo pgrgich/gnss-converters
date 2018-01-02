@@ -452,7 +452,8 @@ void rtcm3_1006_to_sbp(const rtcm_msg_1006 *rtcm_1006,
 }
 
 void sbp_to_rtcm3_1006(const msg_base_pos_ecef_t *sbp_base_pos,
-                       rtcm_msg_1006 *rtcm_1006) {
+                       rtcm_msg_1006 *rtcm_1006)
+{
   rtcm_1006->msg_1005.arp_x = sbp_base_pos->x;
   rtcm_1006->msg_1005.arp_y = sbp_base_pos->y;
   rtcm_1006->msg_1005.arp_z = sbp_base_pos->z;
@@ -465,32 +466,37 @@ void rtcm3_1033_to_sbp(const rtcm_msg_1033 *rtcm_1033,
   sbp_glo_bias->mask = 0;
   /* Resolution 2cm */
   if(strstr(rtcm_1033->rcv_descriptor,"TRIMBLE" ) != NULL || strstr(rtcm_1033->rcv_descriptor,"ASHTECH") != NULL) {
-    sbp_glo_bias->mask = 9;
-    sbp_glo_bias->l1ca_bias = 18.8 * GLO_BIAS_RESOLUTION;
-    sbp_glo_bias->l2p_bias = 23.2 * GLO_BIAS_RESOLUTION;
+    sbp_glo_bias->mask = 0xF;
+    sbp_glo_bias->l1ca_bias = round(TRIMBLE_BIAS_M * GLO_BIAS_RESOLUTION);
+    sbp_glo_bias->l1p_bias = round(TRIMBLE_BIAS_M * GLO_BIAS_RESOLUTION);
+    sbp_glo_bias->l2ca_bias = round(TRIMBLE_BIAS_M * GLO_BIAS_RESOLUTION);
+    sbp_glo_bias->l2p_bias = round(TRIMBLE_BIAS_M * GLO_BIAS_RESOLUTION);
   } else if( strstr(rtcm_1033->rcv_descriptor,"LEICA") != NULL || strstr(rtcm_1033->rcv_descriptor,"NOV") != NULL
              || strstr(rtcm_1033->rcv_descriptor,"GEOMAX") != NULL) {
-    sbp_glo_bias->mask = 9;
-    sbp_glo_bias->l1ca_bias = -70.7 * GLO_BIAS_RESOLUTION;
-    sbp_glo_bias->l2p_bias = -66.3 * GLO_BIAS_RESOLUTION;
+    sbp_glo_bias->mask = 0xF;
+    sbp_glo_bias->l1ca_bias = round(LEICA_BIAS_M * GLO_BIAS_RESOLUTION);
+    sbp_glo_bias->l1p_bias = round(LEICA_BIAS_M * GLO_BIAS_RESOLUTION);
+    sbp_glo_bias->l2ca_bias = round(LEICA_BIAS_M * GLO_BIAS_RESOLUTION);
+    sbp_glo_bias->l2p_bias = round(LEICA_BIAS_M * GLO_BIAS_RESOLUTION);
   } else if( strstr(rtcm_1033->rcv_descriptor,"SEPT") != NULL) {
-    sbp_glo_bias->mask = 9;
-    sbp_glo_bias->l1ca_bias = 0.0 * GLO_BIAS_RESOLUTION;
-    sbp_glo_bias->l2p_bias = 0.0 * GLO_BIAS_RESOLUTION;
-  } else if( strstr(rtcm_1033->rcv_descriptor,"TOP") != NULL) {
-    sbp_glo_bias->mask = 9;
-    sbp_glo_bias->l1ca_bias = -2.56 * GLO_BIAS_RESOLUTION;
-    sbp_glo_bias->l2p_bias = 3.74 * GLO_BIAS_RESOLUTION;
+    sbp_glo_bias->mask = 0xF;
+    sbp_glo_bias->l1ca_bias = round(SEPTENTRIO_BIAS_M * GLO_BIAS_RESOLUTION);
+    sbp_glo_bias->l1p_bias = round(SEPTENTRIO_BIAS_M * GLO_BIAS_RESOLUTION);
+    sbp_glo_bias->l2ca_bias = round(SEPTENTRIO_BIAS_M * GLO_BIAS_RESOLUTION);
+    sbp_glo_bias->l2p_bias = round(SEPTENTRIO_BIAS_M * GLO_BIAS_RESOLUTION);
+  } else if( strstr(rtcm_1033->rcv_descriptor,"TPS") != NULL) {
+    sbp_glo_bias->mask = 0x9;
+    sbp_glo_bias->l1ca_bias = round(TOPCON_BIAS_L1CA_M * GLO_BIAS_RESOLUTION);
+    sbp_glo_bias->l2p_bias = round(TOPCON_BIAS_L2P_M * GLO_BIAS_RESOLUTION);
   } else if( strstr(rtcm_1033->rcv_descriptor,"HEM") != NULL) {
-    sbp_glo_bias->mask = 9;
-    sbp_glo_bias->l1ca_bias = -0.3 * GLO_BIAS_RESOLUTION;
-    sbp_glo_bias->l2p_bias = 3.5 * GLO_BIAS_RESOLUTION;
-  } /*else if( strstr(rtcm_1033->rcv_descriptor,"JAVAD") != NULL) {
-    Can add javad once we know the bias values
-    sbp_glo_bias->mask = 9;
-    sbp_glo_bias->l1ca_bias = -0.3 * GLO_BIAS_RESOLUTION;
-    sbp_glo_bias->l2p_bias = 3.5 * GLO_BIAS_RESOLUTION;
-  } */
+    sbp_glo_bias->mask = 0x9;
+    sbp_glo_bias->l1ca_bias = round(HEMISPHERE_BIAS_L1CA_M * GLO_BIAS_RESOLUTION);
+    sbp_glo_bias->l2p_bias = round(HEMISPHERE_BIAS_L2P_M * GLO_BIAS_RESOLUTION);
+  } else if( strstr(rtcm_1033->rcv_descriptor,"JAVAD") != NULL) {
+    sbp_glo_bias->mask = 0x9;
+    sbp_glo_bias->l1ca_bias = round(JAVAD_BIAS_L1CA_M * GLO_BIAS_RESOLUTION);
+    sbp_glo_bias->l2p_bias = round(JAVAD_BIAS_L2P_M * GLO_BIAS_RESOLUTION);
+  }
 }
 
 void rtcm3_1230_to_sbp(const rtcm_msg_1230 *rtcm_1230,
@@ -499,10 +505,10 @@ void rtcm3_1230_to_sbp(const rtcm_msg_1230 *rtcm_1230,
   sbp_glo_bias->mask = rtcm_1230->fdma_signal_mask;
   /* Resolution 2cm */
   s8 sign_indicator = rtcm_1230->bias_indicator == 0 ? 1 : -1;
-  sbp_glo_bias->l1ca_bias = sign_indicator * rtcm_1230->L1_CA_cpb_meter * GLO_BIAS_RESOLUTION;
-  sbp_glo_bias->l1p_bias = sign_indicator * rtcm_1230->L1_P_cpb_meter * GLO_BIAS_RESOLUTION;
-  sbp_glo_bias->l2ca_bias = sign_indicator * rtcm_1230->L2_CA_cpb_meter * GLO_BIAS_RESOLUTION;
-  sbp_glo_bias->l2p_bias = sign_indicator * rtcm_1230->L2_P_cpb_meter * GLO_BIAS_RESOLUTION;
+  sbp_glo_bias->l1ca_bias = round(sign_indicator * rtcm_1230->L1_CA_cpb_meter * GLO_BIAS_RESOLUTION);
+  sbp_glo_bias->l1p_bias = round(sign_indicator * rtcm_1230->L1_P_cpb_meter * GLO_BIAS_RESOLUTION);
+  sbp_glo_bias->l2ca_bias = round(sign_indicator * rtcm_1230->L2_CA_cpb_meter * GLO_BIAS_RESOLUTION);
+  sbp_glo_bias->l2p_bias = round(sign_indicator * rtcm_1230->L2_P_cpb_meter * GLO_BIAS_RESOLUTION);
 }
 
 void sbp_to_rtcm3_1230(const msg_glo_biases_t *sbp_glo_bias,
@@ -576,7 +582,7 @@ static void validate_base_obs_sanity(struct rtcm3_sbp_state *state, gps_time_sec
 }
 
 bool no_1230_received(struct rtcm3_sbp_state *state) {
-  if(gps_diff_time(&state->time_from_rover_obs,&state->last_1230_received) > MSG_1230_TIMEOUT) {
+  if(gps_diff_time(&state->time_from_rover_obs,&state->last_1230_received) > MSG_1230_TIMEOUT_SEC) {
     return true;
   }
   return false;
