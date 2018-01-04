@@ -201,8 +201,7 @@ void test_trimble_1033(void) {
   rtcm2sbp_set_gps_time(&current_time, &state);
   rtcm2sbp_set_leap_second(18, &state);
 
-  FILE *fp = fopen(
-      "/Users/Swift/repos/gnss-converters/c/tests/data/trimble.rtcm", "rb");
+  FILE *fp = fopen("../../tests/data/trimble.rtcm", "rb");
 
   u8 buffer[MAX_FILE_SIZE];
 
@@ -236,8 +235,7 @@ void test_javad_1033(void) {
   rtcm2sbp_set_gps_time(&current_time, &state);
   rtcm2sbp_set_leap_second(18, &state);
 
-  FILE *fp =
-      fopen("/Users/Swift/repos/gnss-converters/c/tests/data/javad.rtcm", "rb");
+  FILE *fp = fopen("../../tests/data/javad.rtcm", "rb");
 
   u8 buffer[MAX_FILE_SIZE];
 
@@ -271,8 +269,7 @@ void test_leica_1033(void) {
   rtcm2sbp_set_gps_time(&current_time, &state);
   rtcm2sbp_set_leap_second(18, &state);
 
-  FILE *fp =
-      fopen("/Users/Swift/repos/gnss-converters/c/tests/data/leica.rtcm", "rb");
+  FILE *fp = fopen("../../tests/data/leica.rtcm", "rb");
 
   u8 buffer[MAX_FILE_SIZE];
 
@@ -306,8 +303,7 @@ void test_sept_1033(void) {
   rtcm2sbp_set_gps_time(&current_time, &state);
   rtcm2sbp_set_leap_second(18, &state);
 
-  FILE *fp =
-      fopen("/Users/Swift/repos/gnss-converters/c/tests/data/sept.rtcm", "rb");
+  FILE *fp = fopen("../../tests/data/sept.rtcm", "rb");
 
   u8 buffer[MAX_FILE_SIZE];
 
@@ -341,8 +337,7 @@ void test_topcon_1033(void) {
   rtcm2sbp_set_gps_time(&current_time, &state);
   rtcm2sbp_set_leap_second(18, &state);
 
-  FILE *fp = fopen(
-      "/Users/Swift/repos/gnss-converters/c/tests/data/topcon.rtcm", "rb");
+  FILE *fp = fopen("../../tests/data/topcon.rtcm", "rb");
 
   u8 buffer[MAX_FILE_SIZE];
 
@@ -376,8 +371,7 @@ void test_hemisphere_1033(void) {
   rtcm2sbp_set_gps_time(&current_time, &state);
   rtcm2sbp_set_leap_second(18, &state);
 
-  FILE *fp = fopen(
-      "/Users/Swift/repos/gnss-converters/c/tests/data/hemisphere.rtcm", "rb");
+  FILE *fp = fopen("../../tests/data/hemisphere.rtcm", "rb");
 
   u8 buffer[MAX_FILE_SIZE];
 
