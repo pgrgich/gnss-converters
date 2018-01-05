@@ -94,16 +94,6 @@ void sbp_callback_topcon(u8 msg_id, u8 length, u8 *buffer, u16 sender_id) {
   }
 }
 
-void sbp_callback_hemisphere(u8 msg_id, u8 length, u8 *buffer, u16 sender_id) {
-  (void)length;
-  (void)sender_id;
-  if (msg_id == SBP_MSG_GLO_BIASES) {
-    msg_glo_biases_t *sbp_glo_msg = (msg_glo_biases_t *)buffer;
-    check_biases(sbp_glo_msg, HEMISPHERE_BIAS_L1CA_M, 0.0, 0.0,
-                 HEMISPHERE_BIAS_L2P_M);
-  }
-}
-
 void sbp_callback_javad(u8 msg_id, u8 length, u8 *buffer, u16 sender_id) {
   (void)length;
   (void)sender_id;
@@ -362,40 +352,6 @@ void test_topcon_1033(void) {
   return;
 }
 
-void test_hemisphere_1033(void) {
-  struct rtcm3_sbp_state state;
-  rtcm2sbp_init(&state, sbp_callback_hemisphere, NULL);
-  gps_time_sec_t current_time;
-  current_time.wn = 1959;
-  current_time.tow = 510191;
-  rtcm2sbp_set_gps_time(&current_time, &state);
-  rtcm2sbp_set_leap_second(18, &state);
-
-  FILE *fp = fopen("../../tests/data/hemisphere.rtcm", "rb");
-
-  u8 buffer[MAX_FILE_SIZE];
-
-  if (fp == NULL) {
-    fprintf(stderr, "Can't open input file!\n");
-    exit(1);
-  }
-
-  uint32_t file_size = fread(buffer, 1, MAX_FILE_SIZE, fp);
-  uint32_t buffer_index = 0;
-  while (buffer_index < file_size) {
-
-    if (buffer[buffer_index] == 0xD3) {
-      rtcm2sbp_decode_frame(&buffer[buffer_index], file_size - buffer_index,
-                            &state);
-    }
-    // Reset the state as we want to see every 1230 and 1033 in the file.
-    state.last_1230_received.wn = 0;
-    buffer_index++;
-  }
-
-  return;
-}
-
 int main(void) {
   test_RTCM3_decode();
   test_day_rollover();
@@ -403,6 +359,5 @@ int main(void) {
   test_javad_1033();
   test_leica_1033();
   test_sept_1033();
-  /*test_topcon_1033();
-  test_hemisphere_1033();*/
+  test_topcon_1033();
 }
