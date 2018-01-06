@@ -50,6 +50,27 @@ typedef enum code {
 #define SEC_IN_WEEK 604800
 #define SEC_IN_HOUR 3600
 
+/* Multiplier for glonass bias resolution scaling */
+#define GLO_BIAS_RESOLUTION 50.0
+
+/* How long to wait after receiving a 1230 message before accepting the 1033
+ * message again */
+#define MSG_1230_TIMEOUT_SEC 120
+
+/* Third party receiver bias value - these have been sourced from RTCM1230
+ * message, the data can be found with the unit tests*/
+#define TRIMBLE_BIAS_M 19.06
+#define NOVATEL_BIAS_M -71.94
+#define SEPTENTRIO_BIAS_M 0.0
+#define TOPCON_BIAS_L1CA_M -2.56
+#define TOPCON_BIAS_L2P_M 3.74
+#define HEMISPHERE_BIAS_L1CA_M -0.2
+#define HEMISPHERE_BIAS_L2P_M 3.4
+#define JAVAD_BIAS_L1CA_M -1.5
+#define JAVAD_BIAS_L2P_M -8.1
+#define NAVCOM_BIAS_L1CA_M 0.4
+#define NAVCOM_BIAS_L2P_M 2.1
+
 u8 encode_lock_time(double nm_lock_time);
 double decode_lock_time(u8 sbp_lock_time);
 
