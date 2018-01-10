@@ -171,6 +171,42 @@ void rtcm2sbp_decode_frame(const uint8_t *frame, uint32_t frame_length,
       state->last_1230_received = state->time_from_rover_obs;
     }
   }
+  case 1071:
+  case 1072:
+  case 1073:
+  case 1074:
+  case 1075:
+  case 1076:
+  case 1077:
+  case 1081:
+  case 1082:
+  case 1083:
+  case 1084:
+  case 1085:
+  case 1086:
+  case 1087: {
+    /* MSM messages for GPS (1071-1077) and GLO (1081-1087) are currently not supported,
+     * warn the user once every 10 MSM messages. If this is GPS only with only 1 MSM transmitted,
+     * that will be once every 10s, if it's GPS+GLO and all messages are broadcast,
+     * this will be once every ~0.7s */
+    static uint32_t count = 0;
+    if (++count % 10 == 0) {
+      // Get the stn ID as well
+      uint32_t stn_id = 0;
+      const uint8_t *buff = &frame[byte];
+      for (uint32_t i = 12; i < 24; i++) {
+        stn_id = (stn_id << 1) + ((buff[i / 8] >> (7 - i % 8)) & 1u);
+      }
+      msg_log_t sbp_warning;
+      sbp_warning.level = 4;
+      char* msg = "MSM Messages currently not supported, please use a moutnpoint with MT1004 and 1012\n";
+      sbp_warning.text[0] = *msg;
+      state->cb_rtcm_to_sbp((u8)SBP_MSG_LOG, (u8) sizeof(msg_log_t),
+                            (u8 *) &sbp_warning,
+                            rtcm_2_sbp_sender_id(stn_id));
+    }
+  }
+
   default:
     break;
   }
