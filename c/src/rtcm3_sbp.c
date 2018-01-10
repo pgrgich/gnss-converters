@@ -13,6 +13,7 @@
 #include "rtcm3_sbp_internal.h"
 #include <assert.h>
 #include <libsbp/observation.h>
+#include <libsbp/logging.h>
 #include <math.h>
 #include <rtcm3_decode.h>
 #include <string.h>
@@ -22,7 +23,7 @@ static void validate_base_obs_sanity(struct rtcm3_sbp_state *state,
                                      const gps_time_sec_t *rover_time);
 
 void rtcm2sbp_init(struct rtcm3_sbp_state *state,
-                   void (*cb_rtcm_to_sbp)(u8 msg_id, u8 length, u8 *buffer,
+                   void (*cb_rtcm_to_sbp)(u16 msg_id, u8 length, u8 *buffer,
                                           u16 sender_id),
                    void (*cb_base_obs_invalid)(double timediff)) {
   state->time_from_rover_obs.wn = 0;
@@ -139,6 +140,24 @@ void rtcm2sbp_decode_frame(const uint8_t *frame, uint32_t frame_length,
       add_glo_obs_to_buffer(&new_rtcm_obs, state);
     }
     break;
+  }
+#define SBP_FRAMING_MAX_PAYLOAD_SIZE (255u)
+#define RTCM_1029_LOGGING_LEVEL (6u)  // This represents LOG_INFO
+  case 1029: {
+    rtcm_msg_1029 msg_1029;
+    if (rtcm3_decode_1029(&frame[byte], &msg_1029) == 0) {
+      u8 frame_buffer[SBP_FRAMING_MAX_PAYLOAD_SIZE];
+      msg_log_t* sbp_log_msg = (msg_log_t*)frame_buffer;
+      u8 text_size = sizeof(*sbp_log_msg) + msg_1029.utf8_code_units_n > SBP_FRAMING_MAX_PAYLOAD_SIZE ?
+                       SBP_FRAMING_MAX_PAYLOAD_SIZE - sizeof(*sbp_log_msg) :
+                       msg_1029.utf8_code_units_n;
+      sbp_log_msg->level = RTCM_1029_LOGGING_LEVEL;
+      memcpy(sbp_log_msg->text, msg_1029.utf8_code_units, text_size);
+      state->cb_rtcm_to_sbp(SBP_MSG_LOG,
+                            sizeof(*sbp_log_msg) + text_size,
+                            (u8 *)&sbp_log_msg,
+                            rtcm_2_sbp_sender_id(msg_1029.stn_id));
+    }
   }
   case 1033: {
     rtcm_msg_1033 msg_1033;
