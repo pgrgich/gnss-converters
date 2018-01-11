@@ -139,8 +139,6 @@ void rtcm2sbp_decode_frame(const uint8_t *frame, uint32_t frame_length,
     }
     break;
   }
-#define SBP_FRAMING_MAX_PAYLOAD_SIZE (255u)
-#define RTCM_1029_LOGGING_LEVEL (6u)  // This represents LOG_INFO
   case 1029: {
     rtcm_msg_1029 msg_1029;
     if (rtcm3_decode_1029(&frame[byte], &msg_1029) == 0) {
@@ -621,6 +619,8 @@ bool no_1230_received(struct rtcm3_sbp_state *state) {
   return false;
 }
 
+#define SBP_FRAMING_MAX_PAYLOAD_SIZE (255u)
+#define RTCM_1029_LOGGING_LEVEL (6u)  // This represents LOG_INFO
 void send_1029(rtcm_msg_1029 *msg_1029, struct rtcm3_sbp_state *state){
   u8 text_size = sizeof(msg_log_t) + msg_1029->utf8_code_units_n > SBP_FRAMING_MAX_PAYLOAD_SIZE ?
                  SBP_FRAMING_MAX_PAYLOAD_SIZE - sizeof(msg_log_t) :
