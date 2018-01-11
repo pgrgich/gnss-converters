@@ -12,8 +12,6 @@
 
 #include "rtcm3_sbp_internal.h"
 #include <assert.h>
-#include <libsbp/observation.h>
-#include <libsbp/logging.h>
 #include <math.h>
 #include <rtcm3_decode.h>
 #include <string.h>
@@ -146,17 +144,7 @@ void rtcm2sbp_decode_frame(const uint8_t *frame, uint32_t frame_length,
   case 1029: {
     rtcm_msg_1029 msg_1029;
     if (rtcm3_decode_1029(&frame[byte], &msg_1029) == 0) {
-      u8 frame_buffer[SBP_FRAMING_MAX_PAYLOAD_SIZE];
-      msg_log_t* sbp_log_msg = (msg_log_t*)frame_buffer;
-      u8 text_size = sizeof(*sbp_log_msg) + msg_1029.utf8_code_units_n > SBP_FRAMING_MAX_PAYLOAD_SIZE ?
-                       SBP_FRAMING_MAX_PAYLOAD_SIZE - sizeof(*sbp_log_msg) :
-                       msg_1029.utf8_code_units_n;
-      sbp_log_msg->level = RTCM_1029_LOGGING_LEVEL;
-      memcpy(sbp_log_msg->text, msg_1029.utf8_code_units, text_size);
-      state->cb_rtcm_to_sbp(SBP_MSG_LOG,
-                            sizeof(*sbp_log_msg) + text_size,
-                            (u8 *)&sbp_log_msg,
-                            rtcm_2_sbp_sender_id(msg_1029.stn_id));
+      send_1029(&msg_1029, state);
     }
   }
   case 1033: {
@@ -631,4 +619,23 @@ bool no_1230_received(struct rtcm3_sbp_state *state) {
     return true;
   }
   return false;
+}
+
+void send_1029(rtcm_msg_1029 *msg_1029, struct rtcm3_sbp_state *state){
+  u8 text_size = sizeof(msg_log_t) + msg_1029->utf8_code_units_n > SBP_FRAMING_MAX_PAYLOAD_SIZE ?
+                 SBP_FRAMING_MAX_PAYLOAD_SIZE - sizeof(msg_log_t) :
+                 msg_1029->utf8_code_units_n;
+
+  send_sbp_log_message(RTCM_1029_LOGGING_LEVEL, msg_1029->utf8_code_units, text_size, msg_1029->stn_id, state);
+}
+
+void send_sbp_log_message(const uint8_t level, const uint8_t *message, const uint8_t length, const uint16_t stn_id, struct rtcm3_sbp_state *state) {
+  u8 frame_buffer[SBP_FRAMING_MAX_PAYLOAD_SIZE];
+  msg_log_t* sbp_log_msg = (msg_log_t*)frame_buffer;
+  sbp_log_msg->level = level;
+  memcpy(sbp_log_msg->text, message, length);
+  state->cb_rtcm_to_sbp(SBP_MSG_LOG,
+                        sizeof(*sbp_log_msg) + length,
+                        (u8 *)&sbp_log_msg,
+                        rtcm_2_sbp_sender_id(stn_id));
 }

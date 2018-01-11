@@ -15,6 +15,7 @@
 
 #include <libsbp/gnss.h>
 #include <libsbp/observation.h>
+#include <libsbp/logging.h>
 
 #define MAX_OBS_PER_EPOCH 56
 /* MAX valid value (ms) for GPS is 604799999 and GLO is 86401999 */
