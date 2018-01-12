@@ -729,8 +729,8 @@ bool no_1230_received(struct rtcm3_sbp_state *state) {
 }
 
 void send_1029(rtcm_msg_1029 *msg_1029, struct rtcm3_sbp_state *state) {
-  uint8_t message[SBP_FRAMING_MAX_PAYLOAD_SIZE] = "RTCM: ";
-  uint8_t preamble_size = 6;
+  uint8_t message[SBP_FRAMING_MAX_PAYLOAD_SIZE] = RTCM_LOG_PREAMBLE;
+  uint8_t preamble_size = sizeof(RTCM_LOG_PREAMBLE);
   uint8_t max_message_size = SBP_FRAMING_MAX_PAYLOAD_SIZE - sizeof(msg_log_t) - preamble_size;
   uint8_t message_size = sizeof(msg_log_t) + msg_1029->utf8_code_units_n + preamble_size >
                          SBP_FRAMING_MAX_PAYLOAD_SIZE ? max_message_size

@@ -52,6 +52,9 @@ typedef enum code {
 #define SEC_IN_WEEK 604800
 #define SEC_IN_HOUR 3600
 
+/* PREAMBLE to append to an RTCM3 log message */
+#define RTCM_LOG_PREAMBLE "RTCM: "
+
 /* Multiplier for glonass bias resolution scaling */
 #define GLO_BIAS_RESOLUTION 50.0
 
