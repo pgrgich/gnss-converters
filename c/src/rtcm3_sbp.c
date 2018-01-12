@@ -730,45 +730,33 @@ bool no_1230_received(struct rtcm3_sbp_state *state) {
 
 void send_1029(rtcm_msg_1029 *msg_1029, struct rtcm3_sbp_state *state) {
   uint8_t message[SBP_FRAMING_MAX_PAYLOAD_SIZE] = "RTCM: ";
-  uint8_t sbp_index = 6;
-  uint8_t rtcm_index = 0;
-  u8 text_size = sizeof(msg_log_t) + msg_1029->utf8_code_units_n + 6 >
-                         SBP_FRAMING_MAX_PAYLOAD_SIZE
-                     ? SBP_FRAMING_MAX_PAYLOAD_SIZE - sizeof(msg_log_t) - 6
-                     : msg_1029->utf8_code_units_n;
+  uint8_t preamble_size = 6;
+  uint8_t max_message_size = SBP_FRAMING_MAX_PAYLOAD_SIZE - sizeof(msg_log_t) - preamble_size;
+  uint8_t message_size = sizeof(msg_log_t) + msg_1029->utf8_code_units_n + preamble_size >
+                         SBP_FRAMING_MAX_PAYLOAD_SIZE ? max_message_size
+                                                      : msg_1029->utf8_code_units_n + preamble_size;
 
-  while (rtcm_index < msg_1029->utf8_code_units_n) {
-    if ((msg_1029->utf8_code_units[rtcm_index] & 0xC0) == 0xC0 &&
-        (sbp_index + 2 < text_size)) {
-      // 2 byte character
-      memcpy(&message[sbp_index], &msg_1029->utf8_code_units[rtcm_index], 2);
-      rtcm_index += 2;
-      sbp_index += 2;
-    } else if ((msg_1029->utf8_code_units[rtcm_index] & 0xE0) == 0xE0 &&
-               (sbp_index + 3 < text_size)) {
-      // 3 byte character
-      memcpy(&message[sbp_index], &msg_1029->utf8_code_units[rtcm_index], 3);
-      rtcm_index += 3;
-      sbp_index += 3;
-    } else if ((msg_1029->utf8_code_units[rtcm_index] & 0xF0) == 0xF0 &&
-               (sbp_index + 4 < text_size)) {
-      // 4 byte character
-      memcpy(&message[sbp_index], &msg_1029->utf8_code_units[rtcm_index], 4);
-      rtcm_index += 4;
-      sbp_index += 4;
-    } else if (sbp_index < SBP_FRAMING_MAX_PAYLOAD_SIZE) {
-      // must be a 1 byte character
-      memcpy(&message[sbp_index], &msg_1029->utf8_code_units[rtcm_index], 1);
-      rtcm_index += 1;
-      sbp_index += 1;
-    } else {
-      break;
+  memcpy(&message[preamble_size],msg_1029->utf8_code_units,message_size);
+  /* Check if we've had to truncate the string - we can check for the bit
+   * pattern that denotes a 4 byte code unit as it is the super set of all bit
+   * patterns (2,3 and 4 byte code units) */
+  if (message_size == max_message_size) {
+    if ((message[message_size] & 0xF0) == 0xF0 ||
+        (message[message_size] & 0xE0) == 0xF0 ||
+        (message[message_size] & 0xF0) == 0xC0) {
+      // We've truncated a 2, 3 or 4 byte code unit
+      message_size--;
+    } else if ((message[message_size - 1] & 0xF0) == 0xF0 ||
+               (message[message_size - 1] & 0xE0) == 0xE0) {
+      // We've truncated a 3 or 4 byte code unit
+      message_size -= 2;
+    } else if ((message[message_size - 1] & 0xF0) == 0xF0) {
+      // We've truncated a 4 byte code unit
+      message_size -= 3;
     }
   }
 
-  // Want to copy as many complete UTF8 characters into the string as possible
-
-  send_sbp_log_message(RTCM_1029_LOGGING_LEVEL, message, text_size,
+  send_sbp_log_message(RTCM_1029_LOGGING_LEVEL, message, message_size,
                        msg_1029->stn_id, state);
 }
 
